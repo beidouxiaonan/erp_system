@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>质检管理系统</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+    </script>
+</head>
+<body>
+    <div id="root"></div>
+    <script>
+        const e = React.createElement;
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [activeMenu, setActiveMenu] = useState('质检录入');
+            const [data, setData] = useState(null);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                fetch(`${API_BASE_URL}/dashboard/overview`)
+                    .then(r => r.json())
+                    .then(d => {
+                        setData(d);
+                        setLoading(false);
+                    })
+                    .catch(err => {
+                        console.error('Failed to fetch data:', err);
+                        setLoading(false);
+                    });
+            }, []);
+
+            const renderContent = () => {
+                if (activeMenu === '质检录入') {
+                    return e('div', { className: 'space-y-6' },
+                        e('h1', { className: 'text-2xl font-bold text-gray-900' }, '质检录入'),
+                        e('div', { className: 'bg-white rounded-lg shadow p-6' },
+                            e('div', { className: 'space-y-4' },
+                                e('div', {},
+                                    e('label', { className: 'block text-sm font-medium text-gray-700 mb-2' }, '生产单号'),
+                                    e('input', { 
+                                        type: 'text', 
+                                        className: 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500',
+                                        placeholder: '输入生产单号'
+                                    })
+                                ),
+                                e('div', {},
+                                    e('label', { className: 'block text-sm font-medium text-gray-700 mb-2' }, '合格数量'),
+                                    e('input', { 
+                                        type: 'number', 
+                                        className: 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500',
+                                        placeholder: '输入合格数量'
+                                    })
+                                ),
+                                e('button', { 
+                                    className: 'w-full px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium',
+                                    onClick: () => alert('功能开发中...')
+                                }, '提交数据')
+                            )
+                        )
+                    );
+                } else if (activeMenu === '看板分析') {
+                    return e('div', { className: 'space-y-6' },
+                        e('h1', { className: 'text-2xl font-bold text-gray-900' }, '看板分析'),
+                        loading ? 
+                            e('div', { className: 'text-center text-gray-500' }, '加载中...') :
+                            e('div', { className: 'grid grid-cols-3 gap-4' },
+                                e('div', { className: 'bg-white rounded-lg shadow p-6' },
+                                    e('div', { className: 'text-sm text-gray-600' }, '总订单数'),
+                                    e('div', { className: 'text-3xl font-bold text-gray-900' }, data?.total_orders || 0)
+                                ),
+                                e('div', { className: 'bg-white rounded-lg shadow p-6' },
+                                    e('div', { className: 'text-sm text-gray-600' }, '质检记录'),
+                                    e('div', { className: 'text-3xl font-bold text-gray-900' }, data?.total_qa_entries || 0)
+                                ),
+                                e('div', { className: 'bg-white rounded-lg shadow p-6' },
+                                    e('div', { className: 'text-sm text-gray-600' }, '包装记录'),
+                                    e('div', { className: 'text-3xl font-bold text-gray-900' }, data?.total_pkg_entries || 0)
+                                )
+                            )
+                    );
+                } else {
+                    return e('div', { className: 'bg-white rounded-lg shadow p-6' },
+                        e('h1', { className: 'text-2xl font-bold text-gray-900 mb-4' }, activeMenu),
+                        e('p', { className: 'text-gray-600' }, '功能开发中...')
+                    );
+                }
+            };
+
+            return e('div', { className: 'min-h-screen flex flex-col bg-white' },
+                // Top Nav
+                e('header', { className: 'bg-white border-b border-gray-200 px-6 py-4' },
+                    e('div', { className: 'flex items-center justify-between' },
+                        e('div', { className: 'flex items-center gap-3' },
+                            e('div', { className: 'w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center text-white' },
+                                e('span', { className: 'font-bold' }, 'QC')
+                            ),
+                            e('span', { className: 'text-xl font-semibold text-gray-900' }, '质检管理系统')
+                        ),
+                        e('div', { className: 'text-gray-600' }, '用户: 管理员')
+                    )
+                ),
+                // Main Layout
+                e('div', { className: 'flex flex-1 overflow-hidden' },
+                    // Sidebar
+                    e('aside', { className: 'w-64 bg-gray-900 text-white p-4' },
+                        e('nav', { className: 'space-y-2' },
+                            ['数据导入', '质检录入', '包装录入', '看板分析'].map(item =>
+                                e('button', {
+                                    key: item,
+                                    onClick: () => setActiveMenu(item),
+                                    className: `w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                                        activeMenu === item
+                                            ? 'bg-red-500 text-white'
+                                            : 'text-gray-300 hover:bg-gray-800'
+                                    }`
+                                }, item)
+                            )
+                        )
+                    ),
+                    // Main Content
+                    e('main', { className: 'flex-1 bg-gray-100 p-6 overflow-auto' },
+                        e('div', { className: 'max-w-7xl mx-auto' },
+                            renderContent()
+                        )
+                    )
+                )
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(e(App));
+    </script>
+</body>
+</html>
