@@ -1,4 +1,4 @@
-import { Bell, User } from 'lucide-react';
+import { User } from 'lucide-react';
 
 interface TopNavProps {
   user: {

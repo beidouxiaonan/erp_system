@@ -1,8 +1,11 @@
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import sqlite3
+import json
+import math
 import pandas as pd
 from typing import List, Optional
 from datetime import datetime
@@ -84,12 +87,16 @@ def get_dashboard_overview(db: sqlite3.Connection = Depends(get_db)):
         total_qa_entries = len(qa_df) if not qa_df.empty else 0
         total_pkg_entries = len(pkg_df) if not pkg_df.empty else 0
 
+        # 使用pandas to_json处理NaN值
+        qa_data = json.loads(qa_df.to_json(orient='records', force_ascii=False)) if not qa_df.empty else []
+        pkg_data = json.loads(pkg_df.to_json(orient='records', force_ascii=False)) if not pkg_df.empty else []
+
         return {
             "total_orders": total_orders,
             "total_qa_entries": total_qa_entries,
             "total_pkg_entries": total_pkg_entries,
-            "qa_data": qa_df.to_dict('records') if not qa_df.empty else [],
-            "pkg_data": pkg_df.to_dict('records') if not pkg_df.empty else [],
+            "qa_data": qa_data,
+            "pkg_data": pkg_data,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -311,6 +318,10 @@ def create_pkg_entry(entry: PKGEntry, db: sqlite3.Connection = Depends(get_db)):
         price_df = pd.read_sql(f"SELECT * FROM prices WHERE 商家编码 = '{entry.merchant_code}'", db)
         single_pkg_fee = price_df['只包装工价'].iloc[0] if not price_df.empty else 0
         cut_pkg_fee = price_df['剪包工价'].iloc[0] if not price_df.empty else 0
+        
+        # 确保价格不为 None，避免乘法运算错误
+        single_pkg_fee = single_pkg_fee if pd.notna(single_pkg_fee) else 0
+        cut_pkg_fee = cut_pkg_fee if pd.notna(cut_pkg_fee) else 0
 
         unit_price = single_pkg_fee if entry.type == "只包装" else cut_pkg_fee
         settlement_amount = entry.quantity * unit_price
@@ -361,9 +372,12 @@ def get_pkg_history(db: sqlite3.Connection = Depends(get_db)):
     try:
         pkg_df = pd.read_sql("SELECT * FROM pkg_flow ORDER BY 录入时间 DESC", db)
         if pkg_df.empty:
-            return []
-        pkg_df = pkg_df.where(pd.notna(pkg_df), None)
-        return pkg_df.to_dict('records')
+            return JSONResponse(content=[])
+        
+        # 使用pandas的to_json来处理NaN值，然后直接返回Response
+        json_str = pkg_df.to_json(orient='records', force_ascii=False)
+        from fastapi.responses import Response
+        return Response(content=json_str, media_type="application/json")
     except Exception as e:
         print(f"[ERROR] GET /pkg/history: {str(e)}")
         import traceback

@@ -59,6 +59,16 @@ def init_db():
             剪包工价 REAL
         )''')
 
+    # 插入默认价格数据（如果表为空）
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM prices")
+    if cursor.fetchone()[0] == 0:
+        default_prices = [
+            ('M001', 'P001', '产品A', '规格1', 5.0, 2.0, 3.0),
+            ('M001', 'P002', '产品B', '规格2', 6.0, 2.5, 3.5),
+            ('M002', 'P003', '产品C', '规格3', 4.5, 1.8, 2.8),
+        ]
+        cursor.executemany("INSERT INTO prices VALUES (?, ?, ?, ?, ?, ?, ?)", default_prices)
     
     conn.commit()
     return conn

@@ -15,6 +15,7 @@ interface Price {
   货品编号: string;
   货品名称: string;
   规格名称: string;
+  加工点工价: number;
   只包装工价: number;
   剪包工价: number;
 }

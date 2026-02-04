@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, Trash2, UserPlus, RefreshCw, AlertCircle, CheckCircle, Users, Database } from 'lucide-react';
+import { Upload, Trash2, UserPlus, RefreshCw, AlertCircle, CheckCircle, Database } from 'lucide-react';
 import { API_ENDPOINTS } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -35,7 +35,6 @@ export default function DataImportPage() {
   const [sqlResult, setSqlResult] = useState<{type: string, data?: any[], rows_affected?: number} | null>(null);
   const [executingSql, setExecutingSql] = useState(false);
   const [newName, setNewName] = useState('');
-  const [loadingUsers, setLoadingUsers] = useState(false);
   const [workerId, setWorkerId] = useState('');
   const [workerName, setWorkerName] = useState('');
   const [workerPhone, setWorkerPhone] = useState('');
@@ -64,7 +63,7 @@ export default function DataImportPage() {
 
   const fetchUsers = async () => {
     if (user?.role !== 'admin') return;
-    setLoadingUsers(true);
+    // Removed unused loading state
     try {
       const response = await fetch(API_ENDPOINTS.USERS);
       if (response.ok) {
@@ -72,8 +71,6 @@ export default function DataImportPage() {
       }
     } catch (error) {
        console.error(error);
-    } finally {
-        setLoadingUsers(false);
     }
   };
 

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Plus, Minus } from 'lucide-react';
 import {
   getPrices,
-  getPriceByMerchantCode,
   getPKGUnitPrice,
   calculatePKGSettlementAmount,
   submitPKGEntry,
