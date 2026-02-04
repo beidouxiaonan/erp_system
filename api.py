@@ -52,6 +52,8 @@ class PKGEntry(BaseModel):
     product_name: str
     spec_name: str
     operator: str  # 新增：操作员
+    unit_price: Optional[float] = None  # 执行单价（前端计算）
+    settlement_amount: Optional[float] = None  # 结算金额（前端计算）
 
 class LoginRequest(BaseModel):
     username: str
@@ -323,8 +325,17 @@ def create_pkg_entry(entry: PKGEntry, db: sqlite3.Connection = Depends(get_db)):
         single_pkg_fee = single_pkg_fee if pd.notna(single_pkg_fee) else 0
         cut_pkg_fee = cut_pkg_fee if pd.notna(cut_pkg_fee) else 0
 
-        unit_price = single_pkg_fee if entry.type == "只包装" else cut_pkg_fee
-        settlement_amount = entry.quantity * unit_price
+        # 优先使用前端传递的执行单价和结算金额，否则根据类型计算
+        if entry.unit_price is not None:
+            unit_price = entry.unit_price
+        else:
+            # 兼容 "只包装工价" 和 "只包装" 两种类型名称
+            unit_price = single_pkg_fee if entry.type in ["只包装", "只包装工价"] else cut_pkg_fee
+        
+        if entry.settlement_amount is not None:
+            settlement_amount = entry.settlement_amount
+        else:
+            settlement_amount = entry.quantity * unit_price
 
         cursor.execute("""
             INSERT INTO pkg_flow (包装工, 类型, 数量, 录入时间, 操作时间, 只包装工价, 剪包工价, 商家编码, 货品名称, 规格名称, 执行单价, 结算金额, 操作员)

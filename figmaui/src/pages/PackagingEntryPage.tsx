@@ -80,12 +80,16 @@ export default function PackagingEntryPage() {
       }
       if (historyRes.ok) {
         const data = await historyRes.json();
-        // 只显示今天的记录
+        // 只显示今天的记录，按时间倒排只取前10条
         const today = new Date().toISOString().split('T')[0];
         const todayData = data.filter((r: PKGRecord) =>
           r.操作时间?.startsWith(today)
         );
-        setTodayRecords(todayData.slice(0, 50));
+        // 按操作时间值倒排，仅保留前10条
+        todayData.sort((a: PKGRecord, b: PKGRecord) => 
+          new Date(b.操作时间).getTime() - new Date(a.操作时间).getTime()
+        );
+        setTodayRecords(todayData.slice(0, 10));
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -120,7 +124,7 @@ export default function PackagingEntryPage() {
   };
 
   const currentPrice = getCurrentPrice();
-  const unitPrice = currentPrice ? currentPrice[feeType] : 0;
+  const unitPrice = currentPrice ? (currentPrice[feeType] ?? 0) : 0;
   const settlementAmount = quantity * unitPrice;
 
   // 调整数量
@@ -158,6 +162,8 @@ export default function PackagingEntryPage() {
           product_name: currentPrice?.货品名称 || '',
           operator: user?.username || 'unknown',
           spec_name: selectedSpec,
+          unit_price: unitPrice,
+          settlement_amount: settlementAmount,
         }),
       });
 
@@ -367,7 +373,7 @@ export default function PackagingEntryPage() {
                         onChange={() => setFeeType('只包装工价')}
                         className="mr-2"
                       />
-                      只包装工价 (¥{currentPrice.只包装工价?.toFixed(2)})
+                      只包装工价 (¥{(currentPrice.只包装工价 ?? 0).toFixed(2)})
                     </label>
                     <label className="flex items-center">
                       <input
@@ -378,7 +384,7 @@ export default function PackagingEntryPage() {
                         onChange={() => setFeeType('剪包工价')}
                         className="mr-2"
                       />
-                      剪包工价 (¥{currentPrice.剪包工价?.toFixed(2)})
+                      剪包工价 (¥{(currentPrice.剪包工价 ?? 0).toFixed(2)})
                     </label>
                   </div>
                 </div>
@@ -498,7 +504,7 @@ export default function PackagingEntryPage() {
         </div>
 
         {/* 全部历史记录 */}
-        <HistoryTable pageType="pkg" refreshTrigger={refreshTrigger} />
+        <HistoryTable pageType="pkg" refreshTrigger={refreshTrigger} limit={10} />
       </div>
     </div>
   );
