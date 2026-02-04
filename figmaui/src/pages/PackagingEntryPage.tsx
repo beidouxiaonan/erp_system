@@ -45,6 +45,8 @@ export default function PackagingEntryPage() {
   const [selectedSpec, setSelectedSpec] = useState('');
   const [feeType, setFeeType] = useState<'只包装工价' | '剪包工价'>('只包装工价');
   const [quantity, setQuantity] = useState(1);
+  const [productCodeSearch, setProductCodeSearch] = useState('');
+  const [showProductCodeDropdown, setShowProductCodeDropdown] = useState(false);
 
   // 提交状态
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,6 +95,11 @@ export default function PackagingEntryPage() {
 
   // 获取可选的货品编号列表
   const productCodes = [...new Set(prices.map((p: Price) => p.货品编号))];
+
+  // 过滤后的货品编号
+  const filteredProductCodes = productCodes.filter(code =>
+    code.toLowerCase().includes(productCodeSearch.toLowerCase())
+  );
 
   // 根据货品编号获取对应的规格列表
   const getAvailableSpecs = () => {
@@ -273,23 +280,44 @@ export default function PackagingEntryPage() {
           </div>
 
           {/* 2. 选择货品编号 */}
-          <div className="mb-4">
+          <div className="mb-4 relative">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               2. 选择【货品编号】 *
             </label>
-            <select
-              value={selectedProductCode}
-              onChange={(e) => {
-                setSelectedProductCode(e.target.value);
-                setSelectedSpec('');
-              }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-            >
-              <option value="">输入编号搜索...</option>
-              {productCodes.map(code => (
-                <option key={code} value={code}>{code}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <input
+                type="text"
+                value={selectedProductCode || productCodeSearch}
+                onChange={(e) => {
+                  setProductCodeSearch(e.target.value);
+                  setSelectedProductCode('');
+                  setSelectedSpec('');
+                  setShowProductCodeDropdown(true);
+                }}
+                onFocus={() => setShowProductCodeDropdown(true)}
+                onBlur={() => setTimeout(() => setShowProductCodeDropdown(false), 200)}
+                placeholder="输入编号搜索..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+              {showProductCodeDropdown && filteredProductCodes.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {filteredProductCodes.map(code => (
+                    <div
+                      key={code}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => {
+                        setSelectedProductCode(code);
+                        setProductCodeSearch(code);
+                        setSelectedSpec('');
+                        setShowProductCodeDropdown(false);
+                      }}
+                    >
+                      {code}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 3. 选择规格名称 */}
